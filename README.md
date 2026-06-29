@@ -138,4 +138,3 @@ The `default_forward_url` can be changed to avoid passing `--forward-to` on ever
 ## Related Projects
 
 - [fs-ingest-daemon](https://github.com/MonteChristo46/fs-ingest-daemon) — Edge daemon for production hardware that watches local folders and uploads images to the Glitch Hunt cloud.
-- [glitch-hunt-central-api](https://github.com/MonteChristo46/glitch-hunt-central-api) — The central API that processes images and emits events consumed by this CLI.
