@@ -18,6 +18,7 @@ The CLI connects to the Glitch Hunt cloud via a secure outbound WebSocket connec
 
 | Command | Description |
 |---------|-------------|
+| `huntcli install` | Install the binary to a permanent location and authenticate in one step. |
 | `huntcli login` | Authenticate the CLI by pairing with a Glitch Hunt account. Generates a pairing code and QR code; claim the device through the web UI to complete setup. |
 | `huntcli listen` | Connect to the Glitch Hunt cloud and forward live events as HTTP POST requests to a local development server. Supports filtering by event type. |
 | `huntcli trigger` | Inject a simulated event directly into a local server for offline testing. All payloads use the same UnifiedEvent JSON schema as production events. |
@@ -27,7 +28,21 @@ The CLI connects to the Glitch Hunt cloud via a secure outbound WebSocket connec
 
 ## Quick Start
 
-### 1. Download
+### 1. Install (one-step)
+
+```bash
+curl -sfL https://raw.githubusercontent.com/MonteChristo46/glitch-hunt-cli/main/scripts/install.sh | sh
+```
+
+This downloads the correct binary for your platform, places it in `~/.local/bin`, and makes it executable. Then run the interactive installer:
+
+```bash
+~/.local/bin/huntcli install
+```
+
+The installer copies the binary to a permanent location, generates a device ID, and walks you through account pairing.
+
+### 2. Or download manually
 
 Pre-built binaries are available on the [releases page](https://github.com/MonteChristo46/glitch-hunt-cli/releases):
 
@@ -38,7 +53,7 @@ chmod +x ./huntcli
 
 Platform-specific binaries: `darwin-amd64`, `darwin-arm64`, `linux-amd64`, `linux-arm64`, `windows-amd64.exe`.
 
-### 2. Authenticate
+### 3. Authenticate (if not done during install)
 
 ```bash
 ./huntcli login

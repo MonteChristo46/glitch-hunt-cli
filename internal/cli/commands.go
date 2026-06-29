@@ -33,6 +33,7 @@ func NewRootCmd() *cobra.Command {
 	}
 
 	rootCmd.AddCommand(
+		InstallCmd(),
 		LoginCmd(cfg),
 		ListenCmd(cfg),
 		TriggerCmd(cfg),
