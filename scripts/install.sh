@@ -34,7 +34,7 @@ fi
 
 mkdir -p "$INSTALL_DIR"
 TARGET="$INSTALL_DIR/$BIN_NAME"
-DOWNLOAD_URL="https://github.com/MonteChristo46/glitch-hunt-cli/releases/latest/download/${BIN_NAME}-${OS}-${ARCH}"
+DOWNLOAD_URL="https://raw.githubusercontent.com/MonteChristo46/glitch-hunt-cli/main/dist/${BIN_NAME}-${OS}-${ARCH}"
 
 echo "[INFO] Target: $TARGET"
 

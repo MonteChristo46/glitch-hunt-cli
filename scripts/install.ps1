@@ -13,34 +13,11 @@ Write-Host "\033[38;2;156;39;176m██╗  ██╗██╗   ██╗██
 " -NoNewline
 Write-Host " $ESC[38;2;200;200;200mCLI INSTALLER | v$VERSION$ESC[0m`n"
 
-$Url = "https://github.com/MonteChristo46/glitch-hunt-cli/raw/main/build/huntcli-windows-amd64.exe"
+$Url = "https://raw.githubusercontent.com/MonteChristo46/glitch-hunt-cli/main/dist/huntcli-windows-amd64.exe"
 $BinName = "huntcli.exe"
-$InstallDir = "C:\ProgramData\huntcli"
-$PathScope = "Machine"
+$InstallDir = Join-Path $env:LOCALAPPDATA "huntcli"
 
-$currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
-$IsAdmin = $currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
-
-if (-not $IsAdmin) {
-    Write-Host "[SYSTEM] Not running as Administrator. Installing to user directory."
-    $InstallDir = Join-Path $env:LOCALAPPDATA "huntcli"
-    $PathScope = "User"
-} else {
-    Write-Host "[SYSTEM] Running as ADMINISTRATOR"
-}
-
-if (-not (Test-Path -Path $InstallDir)) {
-    New-Item -ItemType Directory -Path $InstallDir | Out-Null
-}
-
-try {
-    $Acl = Get-Acl $InstallDir
-    $Ar = New-Object System.Security.AccessControl.FileSystemAccessRule("Users", "ReadAndExecute", "ContainerInherit,ObjectInherit", "None", "Allow")
-    $Acl.SetAccessRule($Ar)
-    Set-Acl $InstallDir $Acl
-} catch {
-    Write-Warning "[CONFIG] Could not set directory permissions."
-}
+New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
 
 $Target = Join-Path $InstallDir $BinName
 Write-Host "[STATUS] Downloading huntcli..."
@@ -48,19 +25,32 @@ Invoke-WebRequest -Uri $Url -OutFile $Target
 
 Unblock-File -Path $Target
 
-$CurrentPath = [Environment]::GetEnvironmentVariable("Path", $PathScope)
+Write-Host ""
+Write-Host "[OK] Installed to: $Target"
+Write-Host ""
+
+$CurrentPath = [Environment]::GetEnvironmentVariable("Path", "User")
 if ($CurrentPath -notlike "*$InstallDir*") {
-    Write-Host "[CONFIG] Adding $InstallDir to $PathScope PATH..."
-    [Environment]::SetEnvironmentVariable("Path", "$CurrentPath;$InstallDir", $PathScope)
-    $env:Path += ";$InstallDir"
+    Write-Host "Note: $InstallDir is not in your PATH."
+    $choice = Read-Host "Add it to your PATH now? [Y/n]"
+    if ($choice -notmatch "^(n|N|no|NO)$") {
+        [Environment]::SetEnvironmentVariable("Path", "$CurrentPath;$InstallDir", "User")
+        $env:Path += ";$InstallDir"
+        Write-Host "[OK] Added to PATH."
+        Write-Host "     Restart your terminal or log out/in for changes to take effect."
+    } else {
+        Write-Host ""
+        Write-Host "To add it manually, run:"
+        Write-Host "  setx PATH `"%PATH%;$InstallDir`""
+    }
 } else {
-    Write-Host "[CONFIG] PATH already configured."
+    Write-Host "[OK] PATH already configured."
 }
+Write-Host ""
 
-Write-Host "[STATUS] Running huntcli install..."
-Write-Host "--------------------------------------------------"
-& $Target install
-
-Write-Host "--------------------------------------------------"
-Write-Host "[SUCCESS] Installation complete. You can now use 'huntcli'."
-Write-Host "[INFO] You may need to restart your terminal for PATH changes to take effect."
+Write-Host "Now run 'huntcli install' to complete setup:"
+Write-Host "  $Target install"
+Write-Host ""
+Write-Host "Or authenticate directly:"
+Write-Host "  $Target login"
+Write-Host "  $Target listen --forward-to http://localhost:8080/webhooks"
