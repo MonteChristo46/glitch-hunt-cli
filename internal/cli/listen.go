@@ -118,6 +118,7 @@ EXAMPLES:
 			go func() {
 				<-sigCh
 				fmt.Println("\n👋 Shutting down...")
+				wsClient.Close()
 				cancel()
 			}()
 
