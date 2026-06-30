@@ -15,7 +15,7 @@ import (
 )
 
 func LoginCmd(cfg *config.Config) *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "login",
 		Short: "Authenticate this CLI with your Glitch Hunt account",
 		Long: `Authenticate this CLI by pairing it with your Glitch Hunt account.
@@ -32,10 +32,14 @@ HOW IT WORKS:
 You only need to do this once. The token is stored in ~/.config/hunt/config.json.`,
 
 		Example: `  huntcli login`,
+
 		Run: func(cmd *cobra.Command, args []string) {
 			if cfg.AuthToken != "" {
-				fmt.Println("✓ Already authenticated.")
-				return
+				force, _ := cmd.Flags().GetBool("force")
+				if !force {
+					fmt.Println("✓ Already authenticated.")
+					return
+				}
 			}
 
 			if cfg.DeviceID == "" {
@@ -111,4 +115,7 @@ You only need to do this once. The token is stored in ~/.config/hunt/config.json
 			<-done
 		},
 	}
+
+	cmd.Flags().BoolP("force", "f", false, "Force re-authentication even if already logged in")
+	return cmd
 }
