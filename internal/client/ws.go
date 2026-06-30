@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/url"
 	"time"
 
@@ -86,8 +87,13 @@ func (w *WSClient) Listen(ctx context.Context) error {
 		default:
 		}
 
+		w.conn.SetReadDeadline(time.Now().Add(1 * time.Second))
+
 		_, message, err := w.conn.ReadMessage()
 		if err != nil {
+			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+				continue
+			}
 			return fmt.Errorf("read message: %w", err)
 		}
 

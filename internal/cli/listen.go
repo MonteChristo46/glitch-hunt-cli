@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/MonteChristo46/glitch-hunt-cli/internal/client"
 	"os"
 	"os/signal"
 	"strings"
 	"time"
-"github.com/MonteChristo46/glitch-hunt-cli/internal/client"
 
 	"github.com/MonteChristo46/glitch-hunt-cli/internal/config"
 
@@ -110,6 +110,7 @@ EXAMPLES:
 
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
+			defer wsClient.Close()
 
 			sigCh := make(chan os.Signal, 1)
 			signal.Notify(sigCh, os.Interrupt)
