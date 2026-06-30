@@ -103,17 +103,55 @@ echo ""
 echo "[OK] Installed to: $TARGET"
 echo ""
 
-# Check PATH
+# Check PATH and ask to add it
+IN_PATH=false
 case ":$PATH:" in
-  *:"$INSTALL_DIR":*) ;;
-  *)
-    echo "Note: $INSTALL_DIR is not in your PATH."
-    echo "Add it by running:"
-    echo "  export PATH=\"\$PATH:$INSTALL_DIR\""
-    echo "  echo 'export PATH=\"\$PATH:$INSTALL_DIR\"' >> ~/.$(basename "${SHELL:-sh}")rc"
-    echo ""
-    ;;
+  *:"$INSTALL_DIR":*) IN_PATH=true ;;
 esac
+
+if [ "$IN_PATH" = false ]; then
+  echo "Note: $INSTALL_DIR is not in your PATH."
+  printf "Add it to your PATH now? [Y/n]: "
+  read -r ADD_PATH < /dev/tty 2>/dev/null || read -r ADD_PATH
+  case "$ADD_PATH" in
+    n|N|no|NO)
+      echo "Skipping PATH update."
+      echo ""
+      echo "To add it manually, run:"
+      echo "  export PATH=\"\$PATH:$INSTALL_DIR\""
+      echo "  echo 'export PATH=\"\$PATH:$INSTALL_DIR\"' >> ~/.$(basename "${SHELL:-sh}")rc"
+      echo ""
+      ;;
+    *)
+      SHELL_NAME="$(basename "${SHELL:-sh}")"
+      case "$SHELL_NAME" in
+        zsh) RC_FILE="$HOME/.zshrc" ;;
+        bash)
+          if [ -f "$HOME/.bash_profile" ]; then
+            RC_FILE="$HOME/.bash_profile"
+          elif [ -f "$HOME/.bashrc" ]; then
+            RC_FILE="$HOME/.bashrc"
+          else
+            RC_FILE="$HOME/.profile"
+          fi
+          ;;
+        fish) RC_FILE="$HOME/.config/fish/config.fish" ;;
+        *) RC_FILE="$HOME/.profile" ;;
+      esac
+
+      if grep -q "export PATH=.*$INSTALL_DIR.*" "$RC_FILE" 2>/dev/null; then
+        echo "[OK] $INSTALL_DIR already configured in $RC_FILE."
+      else
+        echo "" >> "$RC_FILE"
+        echo "# Added by huntcli installer" >> "$RC_FILE"
+        echo "export PATH=\"\$PATH:$INSTALL_DIR\"" >> "$RC_FILE"
+        echo "[OK] Added to PATH in $RC_FILE."
+        echo "     Restart your terminal or run: source $RC_FILE"
+      fi
+      echo ""
+      ;;
+  esac
+fi
 
 echo "Now run 'huntcli install' to complete setup:"
 echo "  $TARGET install"

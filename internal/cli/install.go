@@ -154,22 +154,57 @@ After installation you can run 'huntcli' from anywhere.`,
 
 			pathInDir := isDirInPath(absTarget)
 			if !pathInDir {
-				fmt.Println("\n[INFO] Target directory is not in your PATH.")
-				fmt.Println("To add it, run one of the following commands:")
-				switch runtime.GOOS {
-				case "windows":
-					fmt.Printf("  setx PATH \"%%PATH%%;%s\"\n", absTarget)
-				default:
+				fmt.Printf("\nNote: %s is not in your PATH.\n", absTarget)
+				addPath := promptInstall("Add it to your PATH now", "Y")
+				if addPath != "n" && addPath != "N" && addPath != "no" && addPath != "NO" {
+					shell := os.Getenv("SHELL")
+					shell = strings.TrimSpace(shell)
+					shellBase := filepath.Base(shell)
+					var rcFile string
+					home, _ := os.UserHomeDir()
+					switch shellBase {
+					case "zsh":
+						rcFile = filepath.Join(home, ".zshrc")
+					case "bash":
+						if f, _ := os.Stat(filepath.Join(home, ".bash_profile")); f != nil {
+							rcFile = filepath.Join(home, ".bash_profile")
+						} else {
+							rcFile = filepath.Join(home, ".bashrc")
+						}
+					default:
+						rcFile = filepath.Join(home, ".profile")
+					}
+
+					line := fmt.Sprintf("export PATH=\"$PATH:%s\"", absTarget)
+					data, _ := os.ReadFile(rcFile)
+					if strings.Contains(string(data), line) {
+						fmt.Printf("[OK] %s already configured in %s.\n", absTarget, rcFile)
+					} else {
+						f, err := os.OpenFile(rcFile, os.O_APPEND|os.O_WRONLY, 0644)
+						if err == nil {
+							fmt.Fprintln(f, "")
+							fmt.Fprintln(f, "# Added by huntcli installer")
+							fmt.Fprintln(f, line)
+							f.Close()
+							fmt.Printf("[OK] Added to PATH in %s.\n", rcFile)
+							fmt.Printf("     Restart your terminal or run: source %s\n", rcFile)
+						}
+					}
+				} else {
+					fmt.Println("")
+					fmt.Println("To add it manually, run:")
+					fmt.Printf("  export PATH=\"$PATH:%s\"\n", absTarget)
 					shell := filepath.Base(os.Getenv("SHELL"))
 					switch shell {
 					case "zsh":
-						fmt.Printf("  echo 'export PATH=\"$PATH:%s\"' >> ~/.zshrc && source ~/.zshrc\n", absTarget)
+						fmt.Printf("  echo 'export PATH=\"$PATH:%s\"' >> ~/.zshrc\n", absTarget)
 					case "bash":
-						fmt.Printf("  echo 'export PATH=\"$PATH:%s\"' >> ~/.bashrc && source ~/.bashrc\n", absTarget)
+						fmt.Printf("  echo 'export PATH=\"$PATH:%s\"' >> ~/.bashrc\n", absTarget)
 					default:
-						fmt.Printf("  export PATH=\"$PATH:%s\"\n", absTarget)
+						fmt.Printf("  echo 'export PATH=\"$PATH:%s\"' >> ~/.profile\n", absTarget)
 					}
 				}
+				fmt.Println("")
 			}
 
 			cfgPath, err := config.ConfigPath()
@@ -274,14 +309,35 @@ After installation you can run 'huntcli' from anywhere.`,
 				fmt.Println("[STATUS] Skipping pairing. Run 'huntcli login' when ready.")
 			}
 
-			fmt.Println("\nInstallation complete.")
-			fmt.Printf("  Binary: %s\n", targetExe)
-			fmt.Printf("  Config: %s\n", cfgPath)
-			if pathInDir {
-				fmt.Println("  Tip:   Run 'huntcli listen' to start receiving events.")
-			} else {
-				fmt.Println("  Tip:   Add the install directory to your PATH, then run 'huntcli listen'.")
+			_, exeOnly := filepath.Split(targetExe)
+			fmt.Printf("\n[OK] Installed to: %s\n\n", targetExe)
+			if !pathInDir {
+				fmt.Printf("Note: %s is not in your PATH.\n", absTarget)
+				fmt.Println("Add it by running:")
+				fmt.Printf("  export PATH=\"$PATH:%s\"\n", absTarget)
+				shell := filepath.Base(os.Getenv("SHELL"))
+				var rcName string
+				switch shell {
+				case "zsh":
+					rcName = "~/.zshrc"
+				case "bash":
+					if _, err := os.Stat(filepath.Join(os.Getenv("HOME"), ".bash_profile")); err == nil {
+						rcName = "~/.bash_profile"
+					} else {
+						rcName = "~/.bashrc"
+					}
+				default:
+					rcName = "~/.profile"
+				}
+				fmt.Printf("  echo 'export PATH=\"$PATH:%s\"' >> %s\n", absTarget, rcName)
+				fmt.Println("")
 			}
+			fmt.Printf("Now run '%s install' to complete setup:\n", exeOnly)
+			fmt.Printf("  %s install\n", targetExe)
+			fmt.Println("")
+			fmt.Println("Or authenticate directly:")
+			fmt.Printf("  %s login\n", targetExe)
+			fmt.Printf("  %s listen --forward-to http://localhost:8080/webhooks\n", targetExe)
 		},
 	}
 
